@@ -1,0 +1,4 @@
+*.o
+riscv-iss
+*.dSYM/
+.DS_Store
