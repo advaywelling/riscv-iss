@@ -17,4 +17,5 @@ class Hart {
         uint32_t pc{};
         uint32_t read_word(uint32_t addr) const;
         void write_word(uint32_t addr, uint32_t write_data);
+        void write_reg(uint32_t reg_num, uint32_t write_data);
 };
