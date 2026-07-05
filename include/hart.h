@@ -11,6 +11,8 @@ class Hart {
         uint32_t get_reg(int reg_num) const { return regs[reg_num]; }
         void dump_regs() const;
         bool is_running() const { return running; }
+        void load_segment(uint32_t addr, const uint8_t* data, uint32_t size);
+        void set_pc(uint32_t addr) { pc = addr; };
     private:
         static const uint32_t MEM_SIZE = 1024 * 1024;
         bool running = true;

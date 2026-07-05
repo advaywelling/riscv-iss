@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <vector>
 #include "hart.h"
 
 Hart::Hart() {
@@ -20,6 +21,12 @@ bool Hart::load_binary(const std::string& filename, uint32_t addr) {
     file.seekg(0, std::ios::beg);
     file.read(reinterpret_cast<char*>(mem+addr), size);
     return true;
+}
+
+void Hart::load_segment(uint32_t addr, const uint8_t* data, uint32_t size) {
+    for (uint32_t i{}; i < size; i++) {
+        mem[addr + i] = data[i];
+    }
 }
 
 uint32_t Hart::read_word(uint32_t addr) const {
@@ -250,10 +257,4 @@ void Hart::handle_ecall() {
     }
 }
 
-int main() {
-    Hart hart;
-    while (hart.is_running()) {
-        hart.cycle();
-    }
-    //hart.dump_regs();
-}
+
