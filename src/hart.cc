@@ -83,7 +83,73 @@ void Hart::cycle() {
     switch (opcode) {
     
     case 0x33: // r type -> register-register
-        switch (funct3) {
+        if (funct7 == 0x01) {
+            switch(funct3) {
+                case 0x0: // mul
+                    write_reg(rd, regs[rs1] * regs[rs2]);
+                    break;
+                case 0x1: { // mul
+                    int64_t result = (int64_t)(int32_t)regs[rs1] * (int64_t)(int32_t)regs[rs2];
+                    write_reg(rd, (uint32_t)(result >> 32));
+                    break;
+                }
+                case 0x2: { // mulhsu
+                    int64_t result = (int64_t)(int32_t)regs[rs1] * (int64_t)(uint32_t)regs[rs2];
+                    write_reg(rd, (uint32_t)(result >> 32));
+                    break;
+                }
+                case 0x3: { // mulhu
+                    int64_t result = (uint64_t)regs[rs1] * (uint64_t)regs[rs2];
+                    write_reg(rd, (uint32_t)(result >> 32));
+                    break;
+                }
+                case 0x4: { // div
+                    int32_t dividend = (int32_t)regs[rs1];
+                    int32_t divisor = (int32_t)regs[rs2];
+                    if (divisor == 0) {
+                        write_reg(rd, 0xFFFFFFFF);
+                    } else if (dividend == INT32_MIN && divisor == -1) {
+                        write_reg(rd, dividend);
+                    } else {
+                        write_reg(rd, dividend / divisor);
+                    }
+                    break;
+                }
+                case 0x5: { // divu
+                    uint32_t dividend = regs[rs1];
+                    uint32_t divisor = regs[rs2];
+                    if (divisor == 0) {
+                        write_reg(rd, 0xFFFFFFFF);
+                    } else {
+                        write_reg(rd, dividend / divisor);
+                    }
+                    break;
+                }
+                case 0x6: { // rem
+                    int32_t dividend = (int32_t)regs[rs1];
+                    int32_t divisor = (int32_t)regs[rs2];
+                    if (divisor == 0) {
+                        write_reg(rd, dividend);
+                    } else if (dividend == INT32_MIN && divisor == -1) {
+                        write_reg(rd, 0);
+                    } else {
+                        write_reg(rd, dividend % divisor);
+                    }
+                    break;
+                }
+                case 0x7: { // remu
+                    uint32_t dividend = regs[rs1];
+                    uint32_t divisor = regs[rs2];
+                    if (divisor == 0) {
+                        write_reg(rd, dividend);
+                    } else {
+                        write_reg(rd, dividend % divisor);
+                    }
+                    break;
+                }
+            }
+        } else {
+            switch (funct3) {
             case 0x0: // add+sub
                 write_reg(rd, (funct7 == 0x20) ? regs[rs1] - regs[rs2] : regs[rs1] + regs[rs2]); 
                 break; 
@@ -108,6 +174,7 @@ void Hart::cycle() {
             case 0x7: // and
                 write_reg(rd, regs[rs1] & regs[rs2]); 
                 break;  
+            }
         }
         break;
     case 0x13: // i type -> register-immediate
