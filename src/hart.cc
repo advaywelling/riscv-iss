@@ -1,14 +1,25 @@
-#include "hart.h"
 #include <iostream>
+#include <fstream>
+#include "hart.h"
 
 Hart::Hart() {
     pc = 0x0;
-    write_word(0x0,  0x00000093);  // addi x1, x0, 0
-    write_word(0x4,  0x00100113);  // addi x2, x0, 1
-    write_word(0x8,  0x00600193);  // addi x3, x0, 6
-    write_word(0xC,  0x002080B3);  // add  x1, x1, x2   <- loop start (0xC)
-    write_word(0x10, 0x00110113);  // addi x2, x2, 1
-    write_word(0x14, 0xFE311CE3);  // bne  x2, x3, -8   (back to 0xC)
+}
+
+bool Hart::load_binary(const std::string& filename, uint32_t addr) {
+    std::ifstream file(filename, std::ios::binary | std::ios::ate);
+    if (!file.is_open()) {
+        std::cerr << "Error opening file: " << filename << "\n";
+        return false;
+    }
+    std::streamsize size = file.tellg();
+    if (addr + size > MEM_SIZE) {
+        std::cerr << "Error - binary too big for memory\n";
+        return false;
+    }
+    file.seekg(0, std::ios::beg);
+    file.read(reinterpret_cast<char*>(mem+addr), size);
+    return true;
 }
 
 uint32_t Hart::read_word(uint32_t addr) const {
@@ -198,8 +209,11 @@ void Hart::cycle() {
         write_reg(rd, curr_pc + imm_u);
         break;
 
-    case 0x73: // system  - ecall / ebreak
-        // placeholder, syscall handling will go here in the future. how far in the future? now that is a mystery
+    case 0x73: // syscall - ecall / ebreak
+        if (instr == 0x00000073) {  
+            handle_ecall();
+        }
+        // ebreak not handled yet. will it ever be handled? who knows
         break;
     case 0x0F: // no-op
         break;
@@ -209,10 +223,37 @@ void Hart::cycle() {
     }
 }
 
+void Hart::handle_ecall() {
+    uint32_t syscall_num = regs[17];
+    
+    switch (syscall_num) {
+        case 93: { // exit
+            running = false;
+            std::cout << "program exited with code " << regs[10] << '\n';
+            break;
+        }
+        case 64: { // write to file
+            uint32_t fd = regs[10]; // file descriptor
+            uint32_t buff_addr = regs[11]; // output buffer addr
+            uint32_t bytes = regs[12]; // num char to write
+
+            for(uint32_t i{}; i < bytes; i++) {
+                char c = (char)mem[buff_addr + i];
+                if (fd == 1 || fd == 2) std::cout << c;
+            }
+            regs[10] = bytes;
+            break;
+        }
+        default:
+            std::cout << "Unhandled syscall: " << syscall_num << '\n';
+            break;
+    }
+}
+
 int main() {
     Hart hart;
-    for(int i{}; i < 20; i++) {
+    while (hart.is_running()) {
         hart.cycle();
     }
-    hart.dump_regs();
+    //hart.dump_regs();
 }
