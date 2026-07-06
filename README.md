@@ -63,8 +63,8 @@ cd /path/to/riscv-tests/isa
 make XLEN=32 rv32ui rv32um
 ```
 
-This produces bare-metal ELFs named `rv32ui-p-add`, `rv32um-p-mul`, etc. Run
-the whole set through the simulator and tally:
+This produces bare-metal ELFs named `rv32ui-p-add`, `rv32um-p-mul`, etc. To run
+the whole set through the simulator:
 
 ```bash
 cd /path/to/RISC-V\ ISS
@@ -77,9 +77,9 @@ done
 ### How pass/fail works
 
 Each compliance test ends by writing a result code and calling `ecall` with
-`a7 = 93` (exit). On **pass**, `a0 = 0`; on **fail**, `a0 = (failing_test_num << 1) | 1`.
-The simulator captures `a0` as the exit code, so `main` reports PASS, or
-FAIL with the failing sub-test number (`code >> 1`). The `.dump` disassembly
+`a7 = 93` (exit). On **pass**, `a0 = 0`. On **fail**, `a0 = (failing_test_num << 1) | 1`.
+The simulator uses `a0` as the exit code, so `main` reports PASS, or
+FAIL with the failing sub-test number. The `.dump` disassembly
 file next to each ELF is the easiest way to trace a specific failure.
 
 ## Layout
