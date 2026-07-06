@@ -1,6 +1,6 @@
 # RISC-V ISS
 
-A small RISC-V instruction set simulator (ISS) written in C++. It loads a
+A RISC-V instruction set simulator (ISS) written in C++. It loads a
 statically-linked ELF binary, then fetches, decodes, and executes one
 instruction at a time until the program exits.
 
@@ -12,7 +12,7 @@ instruction at a time until the program exits.
 
 - **RV32I** base integer instruction set
 - **RV32M** multiply/divide extension
-- Enough machine-mode plumbing to run the compliance harness:
+- The following to run the compliace suit:
   - CSR instructions (`csrrw/s/c` + immediate forms)
   - `mret`, and `mhartid` reads as 0
   - `ecall` (used both for syscalls and as the test pass/fail signal)
@@ -88,7 +88,7 @@ file next to each ELF is the easiest way to trace a specific failure.
 |---------------------|------------------------------------------------------|
 | `src/main.cc`       | entry point: loads the ELF, drives the run loop, reports the outcome |
 | `src/hart.cc`       | the CPU core: fetch / decode / execute, CSRs, syscalls |
-| `include/hart.h`    | `Hart` class — registers, memory, CSRs, PC           |
+| `include/hart.h`    | `Hart` class - registers, memory, CSRs, PC           |
 | `src/elf.cc`        | ELF parser: loads `PT_LOAD` segments, sets the entry PC |
 | `include/elf.h`     | `load_elf` declaration                                |
 
