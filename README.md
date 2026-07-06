@@ -4,7 +4,7 @@ A RISC-V instruction set simulator (ISS) written in C++. It loads a
 statically-linked ELF binary, then fetches, decodes, and executes one
 instruction at a time until the program exits.
 
-**Status:** passes the full RV32IM compliance suite — **50/50** of the
+**Status:** passes the full RV32IM compliance suite - **50/50** of the
 `rv32ui` + `rv32um` machine-mode (`-p-`) tests from
 [riscv-tests](https://github.com/riscv-software-src/riscv-tests).
 
@@ -20,10 +20,10 @@ instruction at a time until the program exits.
 
 ### Not (yet) supported
 
-- Traps / privilege modes / `mtvec` dispatch — the `ecall` exit is handled
+- Traps / privilege modes / `mtvec` dispatch - the `ecall` exit is handled
   directly, so the `-v-` (virtual memory), `rv32mi`, and `rv32si` test suites
   won't run
-- Virtual memory (Sv32) — no page tables / MMU
+- Virtual memory (Sv32) - no page tables / MMU
 - Other extensions: F/D (float), A (atomics), C (compressed)
 
 ## Build
