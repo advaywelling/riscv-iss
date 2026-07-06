@@ -15,8 +15,8 @@ instruction at a time until the program exits.
 - The following to run the compliace suite:
   - CSR instructions (`csrrw/s/c` + immediate forms)
   - `mret`, and `mhartid` reads as 0
-  - `ecall` (used both for syscalls and as the test pass/fail signal)
-  - `fence` / `fence.i` as no-ops
+  - `ecall` (used for syscalls and as the test pass/fail signal)
+  - `fence` / `fence.i` as no-ops (who is implementing this anyways)
 
 ### Not (yet) supported
 
