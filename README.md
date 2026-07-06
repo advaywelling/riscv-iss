@@ -12,7 +12,7 @@ instruction at a time until the program exits.
 
 - **RV32I** base integer instruction set
 - **RV32M** multiply/divide extension
-- The following to run the compliace suit:
+- The following to run the compliace suite:
   - CSR instructions (`csrrw/s/c` + immediate forms)
   - `mret`, and `mhartid` reads as 0
   - `ecall` (used both for syscalls and as the test pass/fail signal)
