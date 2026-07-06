@@ -24,12 +24,14 @@ bool Hart::load_binary(const std::string& filename, uint32_t addr) {
 }
 
 void Hart::load_segment(uint32_t addr, const uint8_t* data, uint32_t size) {
+    addr -= MEM_BASE;
     for (uint32_t i{}; i < size; i++) {
         mem[addr + i] = data[i];
     }
 }
 
 uint32_t Hart::read_word(uint32_t addr) const {
+    addr -= MEM_BASE;
     uint32_t read_data {};
     for (int i{}; i < 4; i++) {
         read_data |= mem[addr + i] << i*8;
@@ -38,6 +40,7 @@ uint32_t Hart::read_word(uint32_t addr) const {
 }
 
 void Hart::write_word(uint32_t addr, uint32_t write_data) {
+    addr -= MEM_BASE;
     for (int i{}; i < 4; i++) {
         mem[addr + i] = (write_data >> i * 8) & 0xFF;
     }
@@ -210,19 +213,19 @@ void Hart::cycle() {
         uint32_t addr = regs[rs1] + imm_i;
         switch (funct3) {
             case 0x0: // lb (sign-extend byte)
-                write_reg(rd, (int32_t)(int8_t)mem[addr]);
+                write_reg(rd, (int32_t)(int8_t)read_byte(addr));
                 break;
             case 0x1: // lh (sign-extend halfword)
-                write_reg(rd, (int32_t)(int16_t)(mem[addr] | (mem[addr + 1] << 8)));
+                write_reg(rd, (int32_t)(int16_t)(read_byte(addr) | (read_byte(addr + 1) << 8)));
                 break;
             case 0x2: // lw
                 write_reg(rd, read_word(addr));
                 break;
             case 0x4: // lbu (zero-extend byte)
-                write_reg(rd, mem[addr]);
+                write_reg(rd, read_byte(addr));
                 break;
             case 0x5: // lhu (zero-extend halfword)
-                write_reg(rd, mem[addr] | (mem[addr + 1] << 8));
+                write_reg(rd, read_byte(addr) | (read_byte(addr + 1) << 8));
                 break;
         }
         break;
@@ -231,11 +234,11 @@ void Hart::cycle() {
         uint32_t addr = regs[rs1] + imm_s;
         switch (funct3) {
             case 0x0: // sb
-                mem[addr] = regs[rs2] & 0xFF;
+                write_byte(addr, regs[rs2] & 0xFF);
                 break;
             case 0x1: // sh
-                mem[addr] = regs[rs2] & 0xFF;
-                mem[addr + 1] = (regs[rs2] >> 8) & 0xFF;
+                write_byte(addr, regs[rs2] & 0xFF);
+                write_byte(addr + 1, (regs[rs2] >> 8) & 0xFF);
                 break;
             case 0x2: // sw
                 write_word(addr, regs[rs2]);
@@ -283,12 +286,64 @@ void Hart::cycle() {
         write_reg(rd, curr_pc + imm_u);
         break;
 
-    case 0x73: // syscall - ecall / ebreak
-        if (instr == 0x00000073) {  
-            handle_ecall();
+    case 0x73: { // syscall - csr/ecall/ebreak
+        uint32_t csr_addr = (instr >> 20) & 0xFFF;
+        switch (funct3) {
+            case 0x0:
+                if (instr == 0x00000073) {
+                    handle_ecall();
+                } else if (instr == 0x30200073) {
+                    pc = read_csr(CSR_MEPC);
+                }
+                // ebreak not handled yet. will it ever be handled? who knows
+                break;
+            case 0x1: { // csrrw
+                uint32_t o = read_csr(csr_addr);
+                write_csr(csr_addr, regs[rs1]);
+                write_reg(rd, o);
+                break;
+            }
+            case 0x2: { // csrrs
+                uint32_t o = read_csr(csr_addr);
+                if (rs1) {
+                    write_csr(csr_addr, o | regs[rs1]);
+                }
+                write_reg(rd, o);
+                break;
+            }
+            case 0x3: { // csrrc
+                uint32_t o = read_csr(csr_addr);
+                if (rs1) {
+                    write_csr(csr_addr, o & ~regs[rs1]);
+                }
+                write_reg(rd, o);
+                break;
+            }
+            case 0x5: { // csrrwi
+                uint32_t o = read_csr(csr_addr);
+                write_csr(csr_addr, rs1);
+                write_reg(rd, o);
+                break;
+            }
+            case 0x6: { // csrrsi
+                uint32_t o = read_csr(csr_addr);
+                if (rs1) {
+                    write_csr(csr_addr, o | rs1);
+                }
+                write_reg(rd, o);
+                break;
+            }
+            case 0x7: { // csrrci
+                uint32_t o = read_csr(csr_addr);
+                if (rs1) {
+                    write_csr(csr_addr, o & ~rs1);
+                }
+                write_reg(rd, o);
+                break;
+            }
         }
-        // ebreak not handled yet. will it ever be handled? who knows
         break;
+    }
     case 0x0F: // no-op
         break;
     default:
@@ -303,7 +358,7 @@ void Hart::handle_ecall() {
     switch (syscall_num) {
         case 93: { // exit
             running = false;
-            std::cout << "program exited with code " << regs[10] << '\n';
+            exit_code = regs[10];
             break;
         }
         case 64: { // write to file
@@ -324,4 +379,12 @@ void Hart::handle_ecall() {
     }
 }
 
+uint32_t Hart::read_csr(uint32_t addr) const {
+    if (addr == CSR_MHARTID) return 0;  
+    return csr[addr];
+}
 
+void Hart::write_csr(uint32_t addr, uint32_t val) {
+    if (addr == CSR_MHARTID) return;    
+    csr[addr] = val;
+}
